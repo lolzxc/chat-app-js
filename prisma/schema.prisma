@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions = [citext]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  email     String   @unique @db.Citext
+  username  String   @db.VarChar(255)
+  password  String   @db.VarChar(255)
+
+  // Tracks how many rooms the user created
+  roomCreated Room[]
+  // Tracks how many rooms the user joined
+  joinedRoom JoinedRoom[]
+
+}
+
+model Room {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String   @db.VarChar(255)
+
+  // Tracks the people who are in the room
+  roomMembers  RoomMembers[]
+
+  // For people who created the room
+  roomCreatorId String
+  roomCreated   User   @relation(fields: [roomCreatorId], references: [id])
+
+  @@unique(fields: [id, roomCreatorId])
+}
+
+
+model RoomMembers {
+  id Int @id @default(autoincrement())
+  joinedAt DateTime @default(now())
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId    Int
+  userId    String
+
+  @@unique(fields: [roomId, userId])
+}
+
+model JoinedRoom {
+  joinedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String @id
+}
